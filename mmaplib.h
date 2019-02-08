@@ -89,7 +89,7 @@ inline MemoryMappedFile::MemoryMappedFile(const char* path)
         NULL);
 
     if (hFile_ == INVALID_HANDLE_VALUE) {
-        std::runtime_error("");
+        throw std::runtime_error("CreateFileA failed");
     }
 
     size_ = ::GetFileSize(hFile_, NULL);
@@ -98,29 +98,28 @@ inline MemoryMappedFile::MemoryMappedFile(const char* path)
 
     if (hMapping_ == NULL) {
         cleanup();
-        std::runtime_error("");
+        throw std::runtime_error("CreateFileMapping failed");
     }
 
     addr_ = ::MapViewOfFile(hMapping_, FILE_MAP_READ, 0, 0, 0);
 #else
     fd_ = open(path, O_RDONLY);
     if (fd_ == -1) {
-        std::runtime_error("");
+        throw std::runtime_error("open failed");
     }
 
     struct stat sb;
     if (fstat(fd_, &sb) == -1) {
         cleanup();
-        std::runtime_error("");
+        throw std::runtime_error("fstat failed");
     }
     size_ = sb.st_size;
 
     addr_ = mmap(NULL, size_, PROT_READ, MAP_PRIVATE, fd_, 0);
 #endif
-
     if (addr_ == MAP_FAILED) {
         cleanup();
-        std::runtime_error("");
+        throw std::runtime_error("mmap failed");
     }
 }
 
