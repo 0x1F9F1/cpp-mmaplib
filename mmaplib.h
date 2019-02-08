@@ -41,6 +41,10 @@ class MemoryMappedFile
 {
 public:
     MemoryMappedFile(const char* path);
+
+    MemoryMappedFile(MemoryMappedFile&& other);
+    MemoryMappedFile(const MemoryMappedFile&) = delete;
+
     ~MemoryMappedFile();
 
     bool is_open() const;
@@ -118,6 +122,26 @@ inline MemoryMappedFile::MemoryMappedFile(const char* path)
         cleanup();
         std::runtime_error("");
     }
+}
+
+inline MemoryMappedFile::MemoryMappedFile(MemoryMappedFile&& other)
+#if defined(_WIN32)
+    : hFile_(other.hFile_)
+    , hMapping_(other.hMapping_)
+#else
+    : fd_(other.fd_)
+#endif
+    , size_(other.size_)
+    , addr_(other.addr_)
+{
+#if defined(_WIN32)
+    other.hFile_ = NULL;
+    other.hMapping_ = NULL;
+#else
+    other.fd_ = -1;
+#endif
+    other.size_ = 0;
+    other.addr_ = MAP_FAILED;
 }
 
 inline MemoryMappedFile::~MemoryMappedFile()
