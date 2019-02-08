@@ -42,7 +42,7 @@ class MemoryMappedFile
 public:
     MemoryMappedFile(const char* path);
 
-    MemoryMappedFile(MemoryMappedFile&& other);
+    MemoryMappedFile(MemoryMappedFile&& other) noexcept;
     MemoryMappedFile(const MemoryMappedFile&) = delete;
 
     ~MemoryMappedFile();
@@ -124,7 +124,7 @@ inline MemoryMappedFile::MemoryMappedFile(const char* path)
     }
 }
 
-inline MemoryMappedFile::MemoryMappedFile(MemoryMappedFile&& other)
+inline MemoryMappedFile::MemoryMappedFile(MemoryMappedFile&& other) noexcept
 #if defined(_WIN32)
     : hFile_(other.hFile_)
     , hMapping_(other.hMapping_)
