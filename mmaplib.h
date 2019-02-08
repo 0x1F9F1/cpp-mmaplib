@@ -94,14 +94,21 @@ inline MemoryMappedFile::MemoryMappedFile(const char* path)
 
     size_ = ::GetFileSize(hFile_, NULL);
 
-    hMapping_ = ::CreateFileMapping(hFile_, NULL, PAGE_READONLY, 0, 0, NULL);
+    if (size_ != 0) {
+        hMapping_ = ::CreateFileMapping(hFile_, NULL, PAGE_READONLY, 0, 0, NULL);
 
-    if (hMapping_ == NULL) {
-        cleanup();
-        throw std::runtime_error("CreateFileMapping failed");
+        if (hMapping_ == NULL) {
+            cleanup();
+            throw std::runtime_error("CreateFileMapping failed");
+        }
+
+        addr_ = ::MapViewOfFile(hMapping_, FILE_MAP_READ, 0, 0, 0);
+
+        if (addr_ == MAP_FAILED) {
+            cleanup();
+            throw std::runtime_error("MapViewOfFile failed");
+        }
     }
-
-    addr_ = ::MapViewOfFile(hMapping_, FILE_MAP_READ, 0, 0, 0);
 #else
     fd_ = open(path, O_RDONLY);
     if (fd_ == -1) {
@@ -113,14 +120,18 @@ inline MemoryMappedFile::MemoryMappedFile(const char* path)
         cleanup();
         throw std::runtime_error("fstat failed");
     }
+
     size_ = sb.st_size;
 
-    addr_ = mmap(NULL, size_, PROT_READ, MAP_PRIVATE, fd_, 0);
-#endif
-    if (addr_ == MAP_FAILED) {
-        cleanup();
-        throw std::runtime_error("mmap failed");
+    if (size_ != 0) {
+        addr_ = mmap(NULL, size_, PROT_READ, MAP_PRIVATE, fd_, 0);
+
+        if (addr_ == MAP_FAILED) {
+            cleanup();
+            throw std::runtime_error("mmap failed");
+        }
     }
+#endif
 }
 
 inline MemoryMappedFile::MemoryMappedFile(MemoryMappedFile&& other) noexcept
